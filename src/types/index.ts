@@ -41,7 +41,9 @@ export interface Transaction {
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (formData: FormData) => Promise<void>;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<any>;
+  signup: (formData: FormData) => Promise<any>;
   logout: () => void;
+  handleTokenExpiration: () => void;
 }

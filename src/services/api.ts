@@ -1,5 +1,5 @@
 // API Base URL
-const API_BASE_URL = 'https://7cvccltb-3110.inc1.devtunnels.ms/api';
+const API_BASE_URL = 'http://localhost:3110/api';
 
 // API Response Types
 export interface ApiResponse<T> {
@@ -81,35 +81,55 @@ export interface LoginResponse {
 
 export interface DashboardData {
   stats: {
-    totalRevenue: number;
-    activeProducts: number;
-    newLeads: number;
-    totalOrders: number;
-    revenueChange: number;
-    productsChange: number;
-    leadsChange: number;
-    ordersChange: number;
+    totalProducts: number;
+    totalViews: number;
+    walletBalance: number;
+    pendingWithdrawals: number;
+  };
+  subscription: {
+    razorpay: {
+      orderId: string;
+      paymentId: string;
+    };
+    features: {
+      maxProducts: number;
+      maxImages: number;
+      featuredListing: boolean;
+      prioritySupport: boolean;
+      analytics: boolean;
+    };
+    _id: string;
+    vendor: string;
+    plan: string;
+    amount: number;
+    currency: string;
+    status: string;
+    startDate: string;
+    endDate: string;
+    autoRenew: boolean;
+    paymentHistory: any[];
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+    isActive: boolean;
+    daysRemaining: number;
+    id: string;
+  };
+  shopStatus: {
+    isListed: boolean;
+    hasActiveSubscription: boolean;
   };
   recentProducts: Array<{
     _id: string;
     name: string;
-    price: number;
-    status: 'active' | 'inactive' | 'out_of_stock';
+    price: {
+      amount: number;
+      currency: string;
+      isNegotiable: boolean;
+    };
+    isActive: boolean;
     views: number;
     createdAt: string;
-  }>;
-  recentLeads: Array<{
-    _id: string;
-    customerName: string;
-    email: string;
-    product: string;
-    status: 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
-    value: number;
-    createdAt: string;
-  }>;
-  revenueData: Array<{
-    date: string;
-    revenue: number;
   }>;
 }
 
@@ -169,8 +189,8 @@ export interface SubscriptionResponse {
 
 export interface ShopListingResponse {
   shop: {
-    _id: string;
-    vendor: string;
+    _id?: string;
+    vendor?: string;
     shopName: string;
     shopDescription: string;
     shopMetaTitle: string;
@@ -178,9 +198,35 @@ export interface ShopListingResponse {
     shopMetaKeywords: string[];
     shopMetaTags: string[];
     shopImages: string[];
+    category?: {
+      mainCategory: {
+        _id: string;
+        name: string;
+        icon: string;
+      };
+      subCategory: {
+        _id: string;
+        name: string;
+        image: string;
+        thumbnail: string;
+      };
+    };
+    address?: {
+      pincode: string;
+      addressLine1: string;
+      addressLine2?: string;
+      location: string;
+      nearbyLocation?: string;
+    };
     isListed: boolean;
-    createdAt: string;
-    updatedAt: string;
+    listedAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+  };
+  subscription?: {
+    currentPlan: string;
+    status: string;
+    features: SubscriptionPlanFeatures;
   };
 }
 
@@ -211,6 +257,275 @@ export interface KYCStatusResponse {
   message?: string;
 }
 
+export interface SubscriptionVerificationResponse {
+  success: boolean;
+  message: string;
+  subscription: {
+    _id: string;
+    vendor: string;
+    plan: string;
+    amount: number;
+    status: 'pending' | 'active' | 'cancelled' | 'expired';
+    startDate: string;
+    endDate: string;
+    features: SubscriptionPlanFeatures;
+    razorpay: {
+      subscriptionId: string;
+      orderId: string;
+      paymentId: string;
+    };
+  };
+}
+
+export interface SubscriptionDetailsResponse {
+  currentSubscription?: {
+    id: string;
+    plan: string;
+    planName: string;
+    amount: number;
+    status: 'active' | 'expired' | 'cancelled';
+    startDate: string;
+    endDate: string;
+    remainingDays: number;
+    isExpired: boolean;
+    isExpiringSoon: boolean;
+    canRenew: boolean;
+    features: SubscriptionPlanFeatures;
+    razorpay: {
+      orderId: string;
+      paymentId: string;
+    };
+    createdAt: string;
+    updatedAt: string;
+  };
+  subscriptionStats: {
+    totalSubscriptions: number;
+    activeSubscriptions: number;
+    expiredSubscriptions: number;
+    cancelledSubscriptions: number;
+    totalAmountSpent: number;
+  };
+  subscriptionHistory: Array<{
+    id: string;
+    plan: string;
+    planName: string;
+    amount: number;
+    status: string;
+    startDate: string;
+    endDate: string;
+    createdAt: string;
+    razorpay: {
+      orderId: string;
+      paymentId: string;
+    };
+  }>;
+  availablePlans: {
+    '3months': SubscriptionPlan;
+    '6months': SubscriptionPlan;
+    '1year': SubscriptionPlan;
+  };
+  renewalRecommendation?: {
+    recommended: string;
+    reason: string;
+    savings: number;
+  };
+  shopStatus: {
+    isListed: boolean;
+    hasActiveSubscription: boolean;
+  };
+  nextRenewalDate?: string;
+  daysUntilRenewal?: number;
+}
+
+export interface Category {
+  _id: string;
+  name: string;
+  icon: string;
+  description: string;
+  vendorCount: number;
+  subCategories: SubCategory[];
+}
+
+export interface SubCategory {
+  _id: string;
+  name: string;
+  image: string;
+  thumbnail: string;
+  description?: string;
+  vendorCount?: number;
+  features?: string[];
+  popularTags?: string[];
+}
+
+
+
+export interface ShopListingFormData {
+  shopName: string;
+  shopDescription: string;
+  shopMetaTitle: string;
+  shopMetaDescription: string;
+  shopMetaKeywords: string[];
+  shopMetaTags: string[];
+  mainCategory: string;
+  subCategory: string;
+  shopPincode: string;
+  shopAddressLine1: string;
+  shopAddressLine2?: string;
+  shopLocation: string;
+  nearbyLocation?: string;
+  shopImages: File[];
+}
+
+export interface AddShopImagesResponse {
+  addedImages: string[];
+  totalImages: number;
+  maxImagesAllowed: number;
+  remainingSlots: number;
+}
+
+export interface ProductImage {
+  url: string;
+  isPrimary: boolean;
+  alt: string;
+  _id?: string;
+}
+
+export interface ProductSpecification {
+  name: string;
+  value: string;
+  _id?: string;
+}
+
+export interface ProductPrice {
+  amount: number;
+  currency: string;
+  isNegotiable: boolean;
+}
+
+export interface ProductStock {
+  quantity: number;
+  isInStock: boolean;
+}
+
+export interface ProductCategory {
+  mainCategory: {
+    _id: string;
+    name: string;
+    icon: string;
+  };
+  subCategory: {
+    _id: string;
+    name: string;
+    image: string;
+  };
+}
+
+export interface ProductContactInfo {
+  phone: string;
+  whatsapp: string;
+  email: string;
+}
+
+export interface Product {
+  _id: string;
+  name: string;
+  description: string;
+  category: ProductCategory;
+  price: ProductPrice;
+  specifications: ProductSpecification[];
+  features: string[];
+  tags: string[];
+  stock: ProductStock;
+  images: ProductImage[];
+  metaTitle: string;
+  metaDescription: string;
+  availableInPincodes: string[];
+  contactInfo: ProductContactInfo;
+  vendor: string;
+  views: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface ProductListItem {
+  _id: string;
+  vendor: string;
+  name: string;
+  description: string;
+  category: ProductCategory;
+  images: ProductImage[];
+  price: {
+    amount: number;
+    currency: string;
+    isNegotiable: boolean;
+  };
+  specifications: ProductSpecification[];
+  features: string[];
+  tags: string[];
+  isActive: boolean;
+  isFeatured: boolean;
+  stock: ProductStock;
+  metaTitle: string;
+  metaDescription: string;
+  views: number;
+  availableInPincodes: string[];
+  contactInfo: ProductContactInfo;
+  favorites: string[];
+  createdAt: string;
+  updatedAt: string;
+  slug: string;
+  __v: number;
+}
+
+export interface ProductsResponse {
+  data: ProductListItem[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}
+
+export interface ProductsApiResponse {
+  data: ProductListItem[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}
+
+export interface CreateProductResponse {
+  _id: string;
+  name: string;
+  description: string;
+  category: ProductCategory;
+  price: ProductPrice;
+  specifications: ProductSpecification[];
+  features: string[];
+  tags: string[];
+  stock: ProductStock;
+  images: ProductImage[];
+  metaTitle: string;
+  metaDescription: string;
+  availableInPincodes: string[];
+  contactInfo: ProductContactInfo;
+  vendor: string;
+  views: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface UpdateProductResponse {
+  _id: string;
+  name: string;
+  description: string;
+  price: ProductPrice;
+  stock: ProductStock;
+}
+
 // API Service Class
 class ApiService {
   private baseURL: string;
@@ -239,9 +554,13 @@ class ApiService {
     const token = this.getToken();
     
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       ...options.headers as Record<string, string>,
     };
+
+    // Only set Content-Type for JSON requests, not for FormData
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -277,6 +596,19 @@ class ApiService {
           headers: Object.fromEntries(response.headers.entries()),
           body: errorData
         });
+        
+        // Handle token expiration (401 Unauthorized)
+        if (response.status === 401) {
+          console.log('Token expired or invalid, triggering logout...');
+          // Clear authentication data
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          // Redirect to login page
+          window.location.href = '/login';
+          throw new Error('Authentication failed. Please login again.');
+        }
+        
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
@@ -284,7 +616,7 @@ class ApiService {
       console.log('=== API Success Response ===');
       console.log('Response data:', data);
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('=== API Request Failed ===');
       console.error('Error details:', error);
       console.error('Error type:', error.constructor.name);
@@ -552,6 +884,262 @@ class ApiService {
     }
   }
 
+  // Verify Subscription Payment API
+  async verifySubscriptionPayment(
+    subscriptionId: string, 
+    paymentId: string, 
+    signature: string,
+    orderId?: string
+  ): Promise<ApiResponse<SubscriptionVerificationResponse>> {
+    try {
+      console.log('=== Verify Subscription Payment API Call ===');
+      console.log('Verifying payment for subscription:', subscriptionId);
+      console.log('Payment ID:', paymentId);
+      console.log('Order ID:', orderId);
+      console.log('Signature:', signature);
+      
+      const requestBody = {
+        subscriptionId,
+        paymentId,
+        signature,
+        orderId // Include order ID for proper signature verification
+      };
+      
+      console.log('Verification request body:', requestBody);
+      
+      const response = await this.request<SubscriptionVerificationResponse>('/vendor/subscription/verify', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      });
+      
+      console.log('Payment verification response:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to verify subscription payment:', error);
+      throw error;
+    }
+  }
+
+  // Get Subscription Details API
+  async getSubscriptionDetails(): Promise<ApiResponse<SubscriptionDetailsResponse>> {
+    try {
+      console.log('=== Get Subscription Details API Call ===');
+      const response = await this.request<SubscriptionDetailsResponse>('/vendor/subscription/details');
+      console.log('Subscription details response:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch subscription details:', error);
+      throw error;
+    }
+  }
+
+  // Get Vendor Profile API
+  async getVendorProfile(): Promise<ApiResponse<any>> {
+    try {
+      console.log('=== Get Vendor Profile API Call ===');
+      const response = await this.request<any>('/vendor/profile');
+      console.log('Vendor profile response:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch vendor profile:', error);
+      throw error;
+    }
+  }
+
+  // Get Categories API
+  async getCategories(): Promise<ApiResponse<Category[]>> {
+    try {
+      console.log('=== Get Categories API Call ===');
+      const response = await this.request<Category[]>('/customer/categories');
+      console.log('Categories response:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+      throw error;
+    }
+  }
+
+  // Get Vendor Categories API (for product entry)
+  async getVendorCategories(): Promise<ApiResponse<any[]>> {
+    try {
+      console.log('=== Get Vendor Categories API Call ===');
+      const response = await this.request<any[]>('/vendor/categories/all');
+      console.log('Vendor Categories response:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch vendor categories:', error);
+      throw error;
+    }
+  }
+
+  // Get Referral Analytics API
+  async getReferralAnalytics(): Promise<ApiResponse<any>> {
+    try {
+      console.log('=== Get Referral Analytics API Call ===');
+      const response = await this.request<any>('/vendor/referral/analytics');
+      console.log('Referral Analytics response:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch referral analytics:', error);
+      throw error;
+    }
+  }
+
+  // Create Withdrawal Request API
+  async createWithdrawalRequest(requestBody: any): Promise<ApiResponse<any>> {
+    try {
+      console.log('=== Create Withdrawal Request API Call ===');
+      console.log('Withdrawal request body:', requestBody);
+      const response = await this.request<any>('/vendor/wallet/withdraw', {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      });
+      console.log('Withdrawal request response:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to create withdrawal request:', error);
+      throw error;
+    }
+  }
+
+  // Get Sub Categories API
+  async getSubCategories(mainCategoryId: string): Promise<ApiResponse<SubCategory[]>> {
+    try {
+      console.log('=== Get Sub Categories API Call ===');
+      const response = await this.request<SubCategory[]>(`/customer/categories/${mainCategoryId}/subcategories`);
+      console.log('Sub categories response:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch sub categories:', error);
+      throw error;
+    }
+  }
+
+  // Add More Shop Images API
+  async addShopImages(formData: FormData): Promise<ApiResponse<AddShopImagesResponse>> {
+    try {
+      console.log('Adding shop images...');
+      console.log('FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}: File - ${value.name} (${value.size} bytes)`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
+
+      const response = await this.request<AddShopImagesResponse>('/vendor/shop/images', {
+        method: 'POST',
+        body: formData
+      });
+
+      console.log('Shop images added successfully:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to add shop images:', error);
+      throw error;
+    }
+  }
+
+  // Product APIs
+  async createProduct(formData: FormData): Promise<ApiResponse<CreateProductResponse>> {
+    try {
+      console.log('Creating product...');
+      console.log('FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}: File - ${value.name} (${value.size} bytes)`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
+
+      const response = await this.request<CreateProductResponse>('/vendor/products', {
+        method: 'POST',
+        body: formData
+      });
+
+      console.log('Product created successfully:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to create product:', error);
+      throw error;
+    }
+  }
+
+  async getProducts(page: number = 1, limit: number = 10): Promise<ApiResponse<ProductsApiResponse>> {
+    try {
+      console.log(`Fetching products - page: ${page}, limit: ${limit}`);
+      
+      const response = await this.request<ProductsApiResponse>(`/vendor/products?page=${page}&limit=${limit}`, {
+        method: 'GET'
+      });
+
+      console.log('Products fetched successfully:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+      throw error;
+    }
+  }
+
+  async getProduct(productId: string): Promise<ApiResponse<Product>> {
+    try {
+      console.log(`Fetching product details for ID: ${productId}`);
+      
+      const response = await this.request<Product>(`/vendor/products/${productId}`, {
+        method: 'GET'
+      });
+
+      console.log('Product details fetched successfully:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch product details:', error);
+      throw error;
+    }
+  }
+
+  async updateProduct(productId: string, formData: FormData): Promise<ApiResponse<UpdateProductResponse>> {
+    try {
+      console.log(`Updating product with ID: ${productId}`);
+      console.log('FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}: File - ${value.name} (${value.size} bytes)`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
+
+      const response = await this.request<UpdateProductResponse>(`/vendor/products/${productId}`, {
+        method: 'PUT',
+        body: formData
+      });
+
+      console.log('Product updated successfully:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to update product:', error);
+      throw error;
+    }
+  }
+
+  async deleteProduct(productId: string): Promise<ApiResponse<{ message: string }>> {
+    try {
+      console.log(`Deleting product with ID: ${productId}`);
+      
+      const response = await this.request<{ message: string }>(`/vendor/products/${productId}`, {
+        method: 'DELETE'
+      });
+
+      console.log('Product deleted successfully:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      throw error;
+    }
+  }
+
   // Test token validity
   async testToken(): Promise<boolean> {
     try {
@@ -565,7 +1153,7 @@ class ApiService {
       const response = await this.request('/auth/verify-token');
       console.log('Token is valid:', response.success);
       return response.success;
-    } catch (error) {
+    } catch (error: any) {
       console.log('Token is invalid:', error.message);
       return false;
     }
@@ -582,7 +1170,7 @@ class ApiService {
       });
       console.log('Connection test response:', response.status);
       return response.ok;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Connection test failed:', error);
       return false;
     }
@@ -590,21 +1178,4 @@ class ApiService {
 }
 
 // Export singleton instance
-export const apiService = new ApiService();
-
-// Export types
-export type { 
-  ApiResponse, 
-  VendorSignupResponse, 
-  LoginResponse, 
-  DashboardData, 
-  SubscriptionPlan, 
-  SubscriptionPlansResponse, 
-  SubscriptionPlanFeatures,
-  SubscriptionResponse,
-  RazorpaySubscription,
-  ShopListingResponse,
-  PANCardUploadResponse,
-  AadharCardUploadResponse,
-  KYCStatusResponse
-}; 
+export const apiService = new ApiService(); 

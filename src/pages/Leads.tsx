@@ -1,265 +1,210 @@
-import React, { useState } from 'react';
-import { Search, Filter, Phone, Mail, MoreHorizontal, TrendingUp } from 'lucide-react';
+import React from 'react';
+import { Users, TrendingUp, Target, Clock, ArrowRight, Star, Zap, Shield } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import { Lead } from '../types';
 
 const Leads: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-
-  const [leads] = useState<Lead[]>([
+  const features = [
     {
-      id: '1',
-      customerName: 'Alice Johnson',
-      email: 'alice.johnson@email.com',
-      phone: '+1 (555) 123-4567',
-      product: 'Wireless Bluetooth Headphones',
-      status: 'new',
-      value: 99.99,
-      createdAt: '2025-01-15T10:30:00Z'
+      icon: <Users className="w-6 h-6 text-blue-600" />,
+      title: 'Lead Management',
+      description: 'Track and manage all your sales leads in one centralized dashboard'
     },
     {
-      id: '2',
-      customerName: 'Bob Smith',
-      email: 'bob.smith@email.com',
-      phone: '+1 (555) 234-5678',
-      product: 'Smart Fitness Watch',
-      status: 'contacted',
-      value: 199.99,
-      createdAt: '2025-01-14T15:45:00Z'
+      icon: <TrendingUp className="w-6 h-6 text-green-600" />,
+      title: 'Conversion Analytics',
+      description: 'Monitor your lead conversion rates and optimize your sales funnel'
     },
     {
-      id: '3',
-      customerName: 'Carol Davis',
-      email: 'carol.davis@email.com',
-      phone: '+1 (555) 345-6789',
-      product: 'Ergonomic Laptop Stand',
-      status: 'qualified',
-      value: 49.99,
-      createdAt: '2025-01-13T09:20:00Z'
+      icon: <Target className="w-6 h-6 text-purple-600" />,
+      title: 'Lead Scoring',
+      description: 'Automatically score leads based on engagement and behavior patterns'
     },
     {
-      id: '4',
-      customerName: 'David Wilson',
-      email: 'david.wilson@email.com',
-      phone: '+1 (555) 456-7890',
-      product: 'USB-C Fast Charging Cable',
-      status: 'converted',
-      value: 19.99,
-      createdAt: '2025-01-12T14:15:00Z'
-    },
-    {
-      id: '5',
-      customerName: 'Eva Martinez',
-      email: 'eva.martinez@email.com',
-      phone: '+1 (555) 567-8901',
-      product: 'Wireless Mouse',
-      status: 'lost',
-      value: 29.99,
-      createdAt: '2025-01-11T11:30:00Z'
-    },
-    {
-      id: '6',
-      customerName: 'Frank Brown',
-      email: 'frank.brown@email.com',
-      phone: '+1 (555) 678-9012',
-      product: 'Desk Organizer Set',
-      status: 'new',
-      value: 34.99,
-      createdAt: '2025-01-15T16:00:00Z'
+      icon: <Clock className="w-6 h-6 text-orange-600" />,
+      title: 'Follow-up Automation',
+      description: 'Set up automated follow-up sequences to never miss a potential sale'
     }
-  ]);
+  ];
 
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.product.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || lead.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
-
-  const getStatusBadge = (status: Lead['status']) => {
-    const statusMap = {
-      new: 'bg-blue-100 text-blue-800',
-      contacted: 'bg-yellow-100 text-yellow-800',
-      qualified: 'bg-purple-100 text-purple-800',
-      converted: 'bg-green-100 text-green-800',
-      lost: 'bg-red-100 text-red-800'
-    };
-    
-    const statusText = {
-      new: 'New',
-      contacted: 'Contacted',
-      qualified: 'Qualified',
-      converted: 'Converted',
-      lost: 'Lost'
-    };
-
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusMap[status]}`}>
-        {statusText[status]}
-      </span>
-    );
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const stats = [
-    { label: 'Total Leads', value: leads.length, change: '+12%' },
-    { label: 'Conversion Rate', value: '16.7%', change: '+2.3%' },
-    { label: 'Avg Lead Value', value: '$72.49', change: '+8.1%' },
-    { label: 'Total Value', value: '$434.94', change: '+15.2%' }
+  const benefits = [
+    {
+      icon: <Star className="w-5 h-5 text-yellow-500" />,
+      text: 'Increase conversion rates by 40%'
+    },
+    {
+      icon: <Zap className="w-5 h-5 text-blue-500" />,
+      text: 'Save 5+ hours per week on lead management'
+    },
+    {
+      icon: <Shield className="w-5 h-5 text-green-500" />,
+      text: 'Never lose track of potential customers'
+    }
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Leads</h1>
-        <p className="text-gray-600">Track and manage your sales leads and customer inquiries</p>
+    <div className="space-y-8">
+      {/* Hero Section */}
+      <div className="text-center space-y-6">
+        <div className="relative">
+          {/* Background decoration */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-3xl transform rotate-1"></div>
+          <div className="absolute inset-0 bg-gradient-to-l from-green-50 via-yellow-50 to-orange-50 rounded-3xl transform -rotate-1"></div>
+          
+          {/* Main content */}
+          <div className="relative bg-white rounded-3xl p-12 shadow-xl border border-gray-100">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-orange-500 rounded-full mb-6">
+              <Users className="w-10 h-10 text-white" />
+            </div>
+            
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              <span className="text-blue-600">Local</span>
+              <span className="text-orange-500">Zarurat</span>
+              <span className="text-gray-700"> Lead Management</span>
+            </h1>
+            
+            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+              Transform your sales process with our powerful lead management system. 
+              Track, nurture, and convert more leads than ever before.
+            </p>
+
+            {/* Coming Soon Badge */}
+            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full font-semibold mb-8">
+              <Clock className="w-5 h-5 mr-2" />
+              Coming Soon - Q2 2025
+            </div>
+
+            {/* CTA Button */}
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-blue-600 to-orange-500 hover:from-blue-700 hover:to-orange-600 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              Get Notified When Available
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
-          <Card key={index}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              </div>
-              <div className="flex items-center text-green-600 text-sm">
-                <TrendingUp className="w-4 h-4 mr-1" />
-                {stat.change}
-              </div>
+      {/* Features Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {features.map((feature, index) => (
+          <Card key={index} className="text-center p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 rounded-full mb-4">
+              {feature.icon}
             </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+            <p className="text-gray-600 text-sm">{feature.description}</p>
           </Card>
         ))}
       </div>
 
-      {/* Filters */}
-      <Card>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              type="text"
-              placeholder="Search leads..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              icon={<Search className="w-4 h-4 text-gray-400" />}
-            />
-          </div>
-          <div className="flex gap-3">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="new">New</option>
-              <option value="contacted">Contacted</option>
-              <option value="qualified">Qualified</option>
-              <option value="converted">Converted</option>
-              <option value="lost">Lost</option>
-            </select>
-            <Button variant="outline">
-              <Filter className="w-4 h-4 mr-2" />
-              More Filters
-            </Button>
-          </div>
+      {/* Benefits Section */}
+      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-0">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose Our Lead Management?</h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Our comprehensive lead management system is designed to help you close more deals 
+            and grow your business faster than ever before.
+          </p>
         </div>
-      </Card>
-
-      {/* Leads Table */}
-      <Card padding={false}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Product
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Value
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLeads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{lead.customerName}</div>
-                      <div className="text-sm text-gray-500">{lead.email}</div>
-                      <div className="text-sm text-gray-500">{lead.phone}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{lead.product}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">${lead.value}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(lead.status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(lead.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Phone className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Mail className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {filteredLeads.length === 0 && (
-        <Card>
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-gray-400" />
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {benefits.map((benefit, index) => (
+            <div key={index} className="flex items-center space-x-3 p-4 bg-white rounded-lg shadow-sm">
+              {benefit.icon}
+              <span className="font-medium text-gray-900">{benefit.text}</span>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No leads found</h3>
-            <p className="text-gray-600 mb-4">
-              {searchTerm ? 'Try adjusting your search terms' : 'Your leads will appear here when customers show interest in your products'}
-            </p>
-          </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Stats Preview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="text-center p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+          <div className="text-3xl font-bold mb-2">40%</div>
+          <div className="text-blue-100">Increase in Conversion Rate</div>
         </Card>
-      )}
+        
+        <Card className="text-center p-6 bg-gradient-to-br from-green-500 to-green-600 text-white">
+          <div className="text-3xl font-bold mb-2">5+</div>
+          <div className="text-green-100">Hours Saved Per Week</div>
+        </Card>
+        
+        <Card className="text-center p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+          <div className="text-3xl font-bold mb-2">100%</div>
+          <div className="text-purple-100">Lead Tracking Accuracy</div>
+        </Card>
+      </div>
+
+      {/* Newsletter Signup */}
+      <Card className="bg-gradient-to-r from-gray-900 to-gray-800 text-white text-center p-12">
+        <h2 className="text-3xl font-bold mb-4">Be the First to Know</h2>
+        <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
+          Get early access to our lead management system and exclusive updates. 
+          We'll notify you as soon as it's available.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+          <input
+            type="email"
+            placeholder="Enter your email"
+            className="flex-1 px-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <Button 
+            className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white px-6 py-3 rounded-lg font-semibold"
+          >
+            Notify Me
+          </Button>
+        </div>
+        
+        <p className="text-gray-400 text-sm mt-4">
+          No spam, unsubscribe at any time. We respect your privacy.
+        </p>
+      </Card>
+
+      {/* Progress Indicator */}
+      <Card className="text-center p-8">
+        <h3 className="text-xl font-semibold text-gray-900 mb-6">Development Progress</h3>
+        
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">Backend API</span>
+            <span className="text-sm text-green-600 font-semibold">Completed</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-green-500 h-2 rounded-full" style={{ width: '100%' }}></div>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">Database Design</span>
+            <span className="text-sm text-green-600 font-semibold">Completed</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-green-500 h-2 rounded-full" style={{ width: '100%' }}></div>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">Frontend Development</span>
+            <span className="text-sm text-blue-600 font-semibold">In Progress</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-blue-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">Testing & QA</span>
+            <span className="text-sm text-yellow-600 font-semibold">Pending</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '25%' }}></div>
+          </div>
+        </div>
+        
+        <p className="text-gray-600 mt-6">
+          Estimated launch: <span className="font-semibold text-gray-900">Q2 2025</span>
+        </p>
+      </Card>
     </div>
   );
 };

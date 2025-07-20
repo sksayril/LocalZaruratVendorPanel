@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, Crown, Check, Loader2, AlertCircle, Star, ExternalLink, CreditCard } from 'lucide-react';
-import { apiService, SubscriptionPlan, SubscriptionPlansResponse } from '../../services/api';
+import { apiService, SubscriptionPlan, SubscriptionPlansResponse, SubscriptionVerificationResponse } from '../../services/api';
 import { razorpayService, RazorpayResponse } from '../../services/razorpay';
 import { useAuth } from '../../context/AuthContext';
+import { useSubscription } from '../../context/SubscriptionContext';
+import PaymentVerificationModal from './PaymentVerificationModal';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -16,11 +18,20 @@ interface PlanWithKey extends SubscriptionPlan {
 
 const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }) => {
   const { user, isAuthenticated } = useAuth();
+  const { refreshSubscription } = useSubscription();
   const [plans, setPlans] = useState<PlanWithKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [subscribing, setSubscribing] = useState<string | null>(null);
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+  const [verificationData, setVerificationData] = useState<SubscriptionVerificationResponse | null>(null);
+  const [paymentDetails, setPaymentDetails] = useState<{
+    paymentId: string;
+    orderId: string;
+    amount: number;
+    planName: string;
+  } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -131,7 +142,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
       console.log('Has Razorpay order ID:', hasRazorpayOrder);
       console.log('Has payment link:', hasPaymentLink);
       
-      if (hasRazorpayOrder) {
+      if (hasRazorpayOrder && response.data.razorpayOrder) {
         console.log('Opening Razorpay modal with order ID from backend:', response.data.razorpayOrder.id);
         
         // Open Razorpay modal with the order ID from backend
@@ -149,17 +160,45 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
         
         console.log('Payment completed successfully:', paymentResponse);
         
-        // Verify payment signature
-        const isValid = razorpayService.verifyPaymentSignature(
-          paymentResponse.razorpay_order_id,
-          paymentResponse.razorpay_payment_id,
-          paymentResponse.razorpay_signature
-        );
-        
-        if (isValid) {
-          alert(`Payment successful!\n\nPlan: ${plan.name}\nAmount: ${formatCurrency(plan.amount)}\nPayment ID: ${paymentResponse.razorpay_payment_id}`);
-        } else {
-          alert('Payment verification failed. Please contact support.');
+        // Call the backend verification API
+        try {
+          console.log('=== Calling Payment Verification API ===');
+          console.log('Subscription ID:', response.data.subscription._id);
+          console.log('Payment ID:', paymentResponse.razorpay_payment_id);
+          console.log('Signature:', paymentResponse.razorpay_signature);
+          
+          const verificationResponse = await apiService.verifySubscriptionPayment(
+            response.data.subscription._id,
+            paymentResponse.razorpay_payment_id,
+            paymentResponse.razorpay_signature,
+            paymentResponse.razorpay_order_id
+          );
+          
+          console.log('Payment verification successful:', verificationResponse);
+          
+          if (verificationResponse.success) {
+            // Set verification data and payment details for the modal
+            setVerificationData(verificationResponse.data);
+            setPaymentDetails({
+              paymentId: paymentResponse.razorpay_payment_id,
+              orderId: paymentResponse.razorpay_order_id,
+              amount: plan.amount,
+              planName: plan.name
+            });
+            
+            // Refresh subscription details and close the subscription modal
+            await refreshSubscription();
+            onClose();
+            setVerificationModalOpen(true);
+          } else {
+            alert('Payment verification failed. Please contact support.');
+          }
+        } catch (verificationError: any) {
+          console.error('Payment verification failed:', verificationError);
+          
+          // Show a more user-friendly error message
+          const errorMessage = verificationError.message || 'Unknown verification error';
+          alert(`Payment completed successfully, but verification failed.\n\nError: ${errorMessage}\n\nPlease contact support with:\n- Payment ID: ${paymentResponse.razorpay_payment_id}\n- Order ID: ${paymentResponse.razorpay_order_id}\n\nYour payment has been processed, but we need to verify it manually.`);
         }
         
       } else if (hasPaymentLink) {
@@ -346,6 +385,14 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
           )}
         </div>
       </div>
+      
+      {/* Payment Verification Modal */}
+      <PaymentVerificationModal
+        isOpen={verificationModalOpen}
+        onClose={() => setVerificationModalOpen(false)}
+        verificationData={verificationData}
+        paymentDetails={paymentDetails}
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Settings, AlertCircle } from 'lucide-react';
 import Card from '../components/ui/Card';
+import Skeleton, { SkeletonForm } from '../components/ui/Skeleton';
 import ShopSettingsForm, { ShopSettingsData } from '../components/shop/ShopSettingsForm';
 
 const ShopSettings: React.FC = () => {
@@ -66,6 +67,26 @@ const ShopSettings: React.FC = () => {
       setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center space-x-3">
+          <Skeleton variant="avatar" className="w-10 h-10" />
+          <div>
+            <Skeleton variant="title" width="w-32" className="mb-2" />
+            <Skeleton variant="text" width="w-80" />
+          </div>
+        </div>
+
+        {/* Form Skeleton */}
+        <Card>
+          <SkeletonForm />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

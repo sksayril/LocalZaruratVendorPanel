@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Package, Users, DollarSign, ShoppingCart, Eye, Loader2, AlertCircle } from 'lucide-react';
+import { TrendingUp, Package, Users, DollarSign, ShoppingCart, Eye, Loader2, AlertCircle, Wallet, Clock } from 'lucide-react';
 import Card from '../components/ui/Card';
+import Skeleton, { SkeletonStats } from '../components/ui/Skeleton';
 import { apiService, DashboardData } from '../services/api';
 
 const Dashboard: React.FC = () => {
@@ -44,37 +45,81 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+  const formatCurrency = (amount: number, currency: string = 'INR') => {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
     }).format(amount);
   };
 
   const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('en-US').format(num);
+    return new Intl.NumberFormat('en-IN').format(num);
   };
 
-  const getChangeType = (change: number | undefined) => {
-    if (change === undefined || change === null) return 'neutral';
-    return change >= 0 ? 'positive' : 'negative';
-  };
-
-  const formatChange = (change: number | undefined) => {
-    // Handle undefined, null, or NaN values
-    if (change === undefined || change === null || isNaN(change)) {
-      return '0.0%';
-    }
-    const sign = change >= 0 ? '+' : '';
-    return `${sign}${change.toFixed(1)}%`;
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading dashboard data...</p>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div>
+          <Skeleton variant="title" width="w-64" className="mb-2" />
+          <Skeleton variant="text" width="w-96" />
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <SkeletonStats />
+
+        {/* Charts and Tables Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Products Skeleton */}
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <Skeleton variant="title" width="w-32" />
+              <Skeleton variant="button" width="w-16" height="h-6" />
+            </div>
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <Skeleton variant="text" width="w-24" className="mb-1" />
+                    <Skeleton variant="text" width="w-16" />
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Skeleton variant="text" width="w-12" />
+                    <Skeleton variant="button" width="w-16" height="h-6" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Subscription Status Skeleton */}
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <Skeleton variant="title" width="w-32" />
+              <Skeleton variant="button" width="w-16" height="h-6" />
+            </div>
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <Skeleton variant="text" width="w-24" className="mb-1" />
+                    <Skeleton variant="text" width="w-32" />
+                  </div>
+                  <div className="text-right">
+                    <Skeleton variant="button" width="w-16" height="h-6" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
       </div>
     );
@@ -119,36 +164,32 @@ const Dashboard: React.FC = () => {
 
   const stats = [
     {
-      title: 'Total Revenue',
-      value: formatCurrency(dashboardData.stats.totalRevenue || 0),
-      change: formatChange(dashboardData.stats.revenueChange),
-      changeType: getChangeType(dashboardData.stats.revenueChange),
-      icon: DollarSign,
-      color: 'bg-green-500'
-    },
-    {
-      title: 'Active Products',
-      value: formatNumber(dashboardData.stats.activeProducts || 0),
-      change: formatChange(dashboardData.stats.productsChange),
-      changeType: getChangeType(dashboardData.stats.productsChange),
+      title: 'Total Products',
+      value: formatNumber(dashboardData.stats.totalProducts || 0),
       icon: Package,
-      color: 'bg-blue-500'
+      color: 'bg-blue-500',
+      description: 'Active products in your shop'
     },
     {
-      title: 'New Leads',
-      value: formatNumber(dashboardData.stats.newLeads || 0),
-      change: formatChange(dashboardData.stats.leadsChange),
-      changeType: getChangeType(dashboardData.stats.leadsChange),
-      icon: Users,
-      color: 'bg-purple-500'
+      title: 'Total Views',
+      value: formatNumber(dashboardData.stats.totalViews || 0),
+      icon: Eye,
+      color: 'bg-purple-500',
+      description: 'Total product views'
     },
     {
-      title: 'Orders',
-      value: formatNumber(dashboardData.stats.totalOrders || 0),
-      change: formatChange(dashboardData.stats.ordersChange),
-      changeType: getChangeType(dashboardData.stats.ordersChange),
-      icon: ShoppingCart,
-      color: 'bg-orange-500'
+      title: 'Wallet Balance',
+      value: formatCurrency(dashboardData.stats.walletBalance || 0, 'INR'),
+      icon: Wallet,
+      color: 'bg-green-500',
+      description: 'Available balance'
+    },
+    {
+      title: 'Pending Withdrawals',
+      value: formatCurrency(dashboardData.stats.pendingWithdrawals || 0, 'INR'),
+      icon: Clock,
+      color: 'bg-orange-500',
+      description: 'Awaiting approval'
     }
   ];
 
@@ -156,7 +197,11 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+        <h1 className="text-2xl font-bold">
+          <span className="text-blue-600">Local</span>
+          <span className="text-orange-500">Zarurat</span>
+          <span className="text-gray-700"> Seller Dashboard</span>
+        </h1>
         <p className="text-gray-600">Welcome back! Here's what's happening with your business.</p>
       </div>
 
@@ -170,13 +215,7 @@ const Dashboard: React.FC = () => {
                 <div>
                   <p className="text-sm font-medium text-gray-600">{stat.title}</p>
                   <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className={`text-sm ${
-                    stat.changeType === 'positive' ? 'text-green-600' : 
-                    stat.changeType === 'negative' ? 'text-red-600' : 
-                    'text-gray-600'
-                  }`}>
-                    {stat.change} from last month
-                  </p>
+                  <p className="text-sm text-gray-500">{stat.description}</p>
                 </div>
                 <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}>
                   <Icon className="w-6 h-6 text-white" />
@@ -198,86 +237,133 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
           <div className="space-y-4">
-            {dashboardData.recentProducts?.map((product) => (
-              <div key={product._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">{product.name}</h4>
-                  <p className="text-sm text-gray-600">{formatCurrency(product.price || 0)}</p>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-1 text-sm text-gray-500">
-                    <Eye className="w-4 h-4" />
-                    <span>{formatNumber(product.views || 0)}</span>
+            {dashboardData.recentProducts && dashboardData.recentProducts.length > 0 ? (
+              dashboardData.recentProducts.map((product) => (
+                <div key={product._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900">{product.name}</h4>
+                    <p className="text-sm text-gray-600">
+                      {formatCurrency(product.price.amount, product.price.currency)}
+                      {product.price.isNegotiable && ' (Negotiable)'}
+                    </p>
+                    <p className="text-xs text-gray-500">Created: {formatDate(product.createdAt)}</p>
                   </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    product.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : product.status === 'out_of_stock'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {product.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
-                  </span>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-1 text-sm text-gray-500">
+                      <Eye className="w-4 h-4" />
+                      <span>{formatNumber(product.views)}</span>
+                    </div>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      product.isActive 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {product.isActive ? 'ACTIVE' : 'INACTIVE'}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )) || (
+              ))
+            ) : (
               <div className="text-center py-8 text-gray-500">
-                No recent products available
+                No products available yet
               </div>
             )}
           </div>
         </Card>
 
-        {/* Recent Leads */}
+        {/* Subscription Status */}
         <Card>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Leads</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Subscription Status</h3>
             <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-              View All
+              Manage
             </button>
           </div>
           <div className="space-y-4">
-            {dashboardData.recentLeads?.map((lead) => (
-              <div key={lead._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">{lead.customerName}</h4>
-                  <p className="text-sm text-gray-600">{lead.email}</p>
-                  <p className="text-xs text-gray-500">{lead.product}</p>
-                </div>
-                <div className="text-right">
+            {dashboardData.subscription ? (
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-gray-900">
+                    {dashboardData.subscription.plan.toUpperCase()} Plan
+                  </h4>
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    lead.status === 'new' ? 'bg-blue-100 text-blue-800' :
-                    lead.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
-                    lead.status === 'qualified' ? 'bg-purple-100 text-purple-800' :
-                    lead.status === 'converted' ? 'bg-green-100 text-green-800' :
-                    'bg-red-100 text-red-800'
+                    dashboardData.subscription.status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
                   }`}>
-                    {lead.status?.toUpperCase() || 'UNKNOWN'}
+                    {dashboardData.subscription.status.toUpperCase()}
                   </span>
-                  <p className="text-xs text-gray-500 mt-1">{formatCurrency(lead.value || 0)}</p>
+                </div>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Amount:</span>
+                    <span className="font-medium">{formatCurrency(dashboardData.subscription.amount, dashboardData.subscription.currency)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Days Remaining:</span>
+                    <span className="font-medium">{dashboardData.subscription.daysRemaining} days</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Max Products:</span>
+                    <span className="font-medium">{dashboardData.subscription.features.maxProducts}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Max Images:</span>
+                    <span className="font-medium">{dashboardData.subscription.features.maxImages}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Analytics:</span>
+                    <span className="font-medium">{dashboardData.subscription.features.analytics ? 'Yes' : 'No'}</span>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-3 border-t border-gray-200">
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Start: {formatDate(dashboardData.subscription.startDate)}</span>
+                    <span>End: {formatDate(dashboardData.subscription.endDate)}</span>
+                  </div>
                 </div>
               </div>
-            )) || (
+            ) : (
               <div className="text-center py-8 text-gray-500">
-                No recent leads available
+                No active subscription
               </div>
             )}
           </div>
         </Card>
       </div>
 
-      {/* Revenue Chart */}
+      {/* Shop Status */}
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Revenue Overview</h3>
-          <select className="text-sm border border-gray-300 rounded-lg px-3 py-1">
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-            <option>Last 3 months</option>
-          </select>
+          <h3 className="text-lg font-semibold text-gray-900">Shop Status</h3>
         </div>
-        <div className="h-64 flex items-center justify-center text-gray-500">
-          <p>Revenue chart will be displayed here</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Shop Listed</span>
+              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                dashboardData.shopStatus.isListed 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {dashboardData.shopStatus.isListed ? 'YES' : 'NO'}
+              </span>
+            </div>
+          </div>
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Active Subscription</span>
+              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                dashboardData.shopStatus.hasActiveSubscription 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {dashboardData.shopStatus.hasActiveSubscription ? 'YES' : 'NO'}
+              </span>
+            </div>
+          </div>
         </div>
       </Card>
     </div>

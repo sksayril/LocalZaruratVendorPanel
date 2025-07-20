@@ -132,6 +132,8 @@ class RazorpayService {
     console.log('Payment ID:', paymentId);
     console.log('Signature:', signature);
     
+    // Note: In production, this should be done on the backend
+    // The frontend should not have access to the secret key
     return true;
   }
 
@@ -145,7 +147,4 @@ class RazorpayService {
 }
 
 // Create and export singleton instance
-export const razorpayService = new RazorpayService();
-
-// Export types
-export type { RazorpayOptions, RazorpayResponse, RazorpayOrder }; 
+export const razorpayService = new RazorpayService(); 

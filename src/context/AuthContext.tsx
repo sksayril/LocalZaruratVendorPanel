@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthContextType } from '../types';
 
 // Create the context
@@ -22,6 +22,75 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize authentication state from localStorage
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        
+        if (token && storedUser) {
+          // Import API service dynamically to avoid circular dependency
+          const { apiService } = await import('../services/api');
+          
+          // Test if the token is still valid
+          const isTokenValid = await apiService.testToken();
+          
+          if (isTokenValid) {
+            // Token is valid, restore user state
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+            setIsAuthenticated(true);
+            console.log('Authentication restored from localStorage');
+          } else {
+            // Token is invalid, clear everything
+            console.log('Stored token is invalid, clearing authentication');
+            clearAuthData();
+          }
+        } else {
+          console.log('No stored authentication data found');
+        }
+      } catch (error) {
+        console.error('Error initializing authentication:', error);
+        clearAuthData();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  // Helper function to clear all authentication data
+  const clearAuthData = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('dashboardData');
+    localStorage.removeItem('products');
+    localStorage.removeItem('leads');
+    localStorage.removeItem('wallets');
+    localStorage.removeItem('profile');
+    localStorage.removeItem('settings');
+    localStorage.removeItem('notifications');
+    localStorage.removeItem('subscription');
+    localStorage.removeItem('kyc');
+    localStorage.removeItem('shopImages');
+    localStorage.removeItem('vendorDetails');
+    
+    // Clear sessionStorage as well
+    sessionStorage.clear();
+    
+    setUser(null);
+    setIsAuthenticated(false);
+  };
+
+  // Helper function to save user data to localStorage
+  const saveUserToStorage = (userData: User) => {
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -43,6 +112,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         company: response.data.user.vendorDetails?.gstNumber ? response.data.user.name : undefined,
         avatar: response.data.user.vendorDetails?.shopImages?.[0] || undefined
       };
+      
+      // Save user data to localStorage
+      saveUserToStorage(loginUser);
       
       setUser(loginUser);
       setIsAuthenticated(true);
@@ -75,6 +147,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         avatar: response.data.vendor.vendorDetails.shopImages[0] || undefined
       };
       
+      // Save user data to localStorage
+      saveUserToStorage(vendorUser);
+      
       setUser(vendorUser);
       setIsAuthenticated(true);
       
@@ -88,45 +163,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     console.log('Logging out user...');
     
-    // Clear everything from localStorage
-    localStorage.clear();
+    // Clear all authentication data
+    clearAuthData();
     
-    // Also remove specific items if they exist (for extra safety)
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('dashboardData');
-    localStorage.removeItem('products');
-    localStorage.removeItem('leads');
-    localStorage.removeItem('wallets');
-    localStorage.removeItem('profile');
-    localStorage.removeItem('settings');
-    localStorage.removeItem('notifications');
-    localStorage.removeItem('subscription');
-    localStorage.removeItem('kyc');
-    localStorage.removeItem('shopImages');
-    localStorage.removeItem('vendorDetails');
+    console.log('All authentication data cleared successfully');
     
-    // Clear sessionStorage as well (if any data is stored there)
-    sessionStorage.clear();
-    
-    // Reset state
-    setUser(null);
-    setIsAuthenticated(false);
-    
-    console.log('All localStorage and sessionStorage cleared successfully');
-    
-    // Optional: Redirect to login page
-    // window.location.href = '/login';
+    // Redirect to login page
+    window.location.href = '/login';
+  };
+
+  // Function to handle token expiration (called from API service)
+  const handleTokenExpiration = () => {
+    console.log('Token expired, logging out user...');
+    clearAuthData();
+    window.location.href = '/login';
   };
 
   // Context value
   const value: AuthContextType = {
     user,
     isAuthenticated,
+    isLoading,
     login,
     signup,
-    logout
+    logout,
+    handleTokenExpiration
   };
 
   return (
