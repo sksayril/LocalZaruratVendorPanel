@@ -1,5 +1,5 @@
 // Razorpay Configuration
-const RAZORPAY_KEY_ID = 'rzp_test_BDT2TegS4Ax6Vp';
+const RAZORPAY_KEY_ID = 'rzp_live_RAHu2hkLoA44nP';
 
 // Razorpay types
 export interface RazorpayOptions {
