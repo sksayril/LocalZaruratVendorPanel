@@ -1,5 +1,6 @@
 // API Base URL
-const API_BASE_URL = 'http://localhost:3110/api';
+// const API_BASE_URL = 'http://localhost:3110/api';
+const API_BASE_URL = 'https://api.localzarurat.com/api';
 
 // API Response Types
 export interface ApiResponse<T> {
