@@ -70,6 +70,7 @@ const ShopListingModal: React.FC<ShopListingModalProps> = ({
     shopAddressLine2: '',
     shopLocation: '',
     nearbyLocation: '',
+    coordinates: undefined,
     shopImages: []
   });
 
@@ -79,6 +80,8 @@ const ShopListingModal: React.FC<ShopListingModalProps> = ({
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [pincodeData, setPincodeData] = useState<PincodeResponse | null>(null);
   const [showPincodeResults, setShowPincodeResults] = useState(false);
+  const [coordinatesLoading, setCoordinatesLoading] = useState(false);
+  const [currentLocationLoading, setCurrentLocationLoading] = useState(false);
 
   // Load categories on mount
   useEffect(() => {
@@ -153,6 +156,7 @@ const ShopListingModal: React.FC<ShopListingModalProps> = ({
         shopAddressLine2: existingData.address?.addressLine2 || '',
         shopLocation: existingData.address?.location || '',
         nearbyLocation: existingData.address?.nearbyLocation || '',
+        coordinates: existingData.address?.coordinates || undefined,
         shopImages: []
       });
       setSelectedMainCategory(existingData.category?.mainCategory._id || '');
@@ -208,6 +212,104 @@ const ShopListingModal: React.FC<ShopListingModalProps> = ({
     setSelectedState(postOffice.State);
     setShowPincodeResults(false);
     toast.success('Address auto-filled from pincode data!');
+  };
+
+  // Get coordinates from address
+  const getCoordinatesFromAddress = async () => {
+    const address = `${formData.shopAddressLine1}, ${formData.shopLocation}, ${selectedState}, ${formData.shopPincode}`;
+    
+    if (!formData.shopAddressLine1 || !formData.shopLocation || !selectedState || !formData.shopPincode) {
+      toast.error('Please fill in address details first');
+      return;
+    }
+
+    if (!formData.shopAddressLine1.trim() || !formData.shopLocation.trim() || !selectedState.trim() || !formData.shopPincode.trim()) {
+      toast.error('Please fill in all address details');
+      return;
+    }
+
+    try {
+      setCoordinatesLoading(true);
+      const coordinates = await apiService.getCoordinatesFromAddress(address);
+      setFormData(prev => ({
+        ...prev,
+        coordinates
+      }));
+      toast.success(`Coordinates found: ${coordinates.latitude}, ${coordinates.longitude}`);
+    } catch (error: any) {
+      console.error('Failed to get coordinates:', error);
+      toast.error(error.message || 'Failed to get coordinates');
+    } finally {
+      setCoordinatesLoading(false);
+    }
+  };
+
+  // Get current location
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by this browser');
+      return;
+    }
+
+    setCurrentLocationLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          console.log('Current location:', { latitude, longitude });
+          
+          // Get address from coordinates
+          const address = await apiService.getAddressFromCoordinates(latitude, longitude);
+          console.log('Address from coordinates:', address);
+          
+          // Parse address components (basic parsing)
+          const addressParts = address.split(', ');
+          const pincode = addressParts[addressParts.length - 1]?.match(/\d{6}/)?.[0] || '';
+          const state = addressParts[addressParts.length - 2] || '';
+          const city = addressParts[addressParts.length - 3] || '';
+          const street = addressParts.slice(0, -3).join(', ') || '';
+          
+          setFormData(prev => ({
+            ...prev,
+            coordinates: { latitude, longitude },
+            shopPincode: pincode,
+            shopAddressLine1: street,
+            shopLocation: city,
+            nearbyLocation: address
+          }));
+          setSelectedState(state);
+          
+          toast.success('Current location detected and address filled!');
+        } catch (error: any) {
+          console.error('Failed to get address from coordinates:', error);
+          toast.error('Failed to get address from current location');
+        } finally {
+          setCurrentLocationLoading(false);
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        let errorMessage = 'Failed to get current location';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out';
+            break;
+        }
+        toast.error(errorMessage);
+        setCurrentLocationLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
   };
 
   const handleInputChange = (field: keyof ShopListingFormData, value: any) => {
@@ -340,16 +442,24 @@ const ShopListingModal: React.FC<ShopListingModalProps> = ({
         submitFormData.append(`shopMetaTags[${index}]`, tag);
       });
 
+      // Add coordinates if available
+      if (formData.coordinates && formData.coordinates.latitude && formData.coordinates.longitude) {
+        submitFormData.append('latitude', formData.coordinates.latitude.toString());
+        submitFormData.append('longitude', formData.coordinates.longitude.toString());
+      }
+
       // Add images
       formData.shopImages?.forEach((image) => {
         submitFormData.append('shopImages', image);
       });
 
       console.log('Submitting shop listing...');
-      const response = await apiService.createShopListing(submitFormData);
+      const response = existingData 
+        ? await apiService.updateShopListing(submitFormData)
+        : await apiService.createShopListing(submitFormData);
       
       console.log('Shop listing response:', response);
-      toast.success('Shop listed successfully!');
+      toast.success(existingData ? 'Shop listing updated successfully!' : 'Shop listed successfully!');
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -372,6 +482,11 @@ const ShopListingModal: React.FC<ShopListingModalProps> = ({
             <h2 className="text-xl font-semibold text-gray-900">
               {existingData ? 'Edit Shop Listing' : 'List My Business'}
             </h2>
+            {existingData && (
+              <p className="text-sm text-gray-500 mt-1">
+                Update your shop information and coordinates
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -388,6 +503,62 @@ const ShopListingModal: React.FC<ShopListingModalProps> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          
+          {/* Existing Shop Data Display */}
+          {existingData && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center space-x-2 mb-3">
+                <Store className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-medium text-blue-900">Current Shop Information</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-blue-700 font-medium">Shop Name</p>
+                  <p className="text-blue-600">{existingData.shopName}</p>
+                </div>
+                <div>
+                  <p className="text-blue-700 font-medium">Category</p>
+                  <p className="text-blue-600">
+                    {existingData.category?.mainCategory.name} → {existingData.category?.subCategory.name}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-blue-700 font-medium">Address</p>
+                  <p className="text-blue-600">
+                    {existingData.address?.addressLine1}, {existingData.address?.location}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-blue-700 font-medium">Pincode</p>
+                  <p className="text-blue-600">{existingData.address?.pincode}</p>
+                </div>
+                {existingData.address?.coordinates && (
+                  <div className="md:col-span-2">
+                    <p className="text-blue-700 font-medium">Current Coordinates</p>
+                    <p className="text-blue-600">
+                      Lat: {existingData.address.coordinates?.latitude?.toFixed(6) || 'N/A'}, 
+                      Lng: {existingData.address.coordinates?.longitude?.toFixed(6) || 'N/A'}
+                    </p>
+                  </div>
+                )}
+                <div className="md:col-span-2">
+                  <p className="text-blue-700 font-medium">Listed Status</p>
+                  <p className="text-blue-600">
+                    {existingData.isListed ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Listed
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Not Listed
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900 flex items-center">
@@ -629,6 +800,121 @@ const ShopListingModal: React.FC<ShopListingModalProps> = ({
                   onChange={(e) => handleInputChange('nearbyLocation', e.target.value)}
                   placeholder="Enter nearby landmarks, metro stations, etc. (optional)"
                 />
+              </div>
+
+              {/* Coordinates Section */}
+              <div className="md:col-span-2 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Location Coordinates
+                  </label>
+                  <div className="flex space-x-2">
+                    <Button
+                      type="button"
+                      onClick={getCurrentLocation}
+                      loading={currentLocationLoading}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      <MapPin className="w-3 h-3 mr-1" />
+                      Get Current Location
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={getCoordinatesFromAddress}
+                      loading={coordinatesLoading}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      <Search className="w-3 h-3 mr-1" />
+                      Get from Address
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Coordinates Display */}
+                {formData.coordinates && formData.coordinates.latitude && formData.coordinates.longitude && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-green-800">Coordinates Found</p>
+                        <p className="text-xs text-green-600">
+                          Latitude: {formData.coordinates?.latitude?.toFixed(6) || 'N/A'}, 
+                          Longitude: {formData.coordinates?.longitude?.toFixed(6) || 'N/A'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, coordinates: undefined }))}
+                        className="text-green-600 hover:text-green-800"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Manual Coordinates Input */}
+                {(!formData.coordinates || !formData.coordinates.latitude || !formData.coordinates.longitude) && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Latitude
+                      </label>
+                      <Input
+                        type="number"
+                        step="any"
+                        placeholder="e.g., 19.0760"
+                        value={formData.coordinates?.latitude || ''}
+                        onChange={(e) => {
+                          const lat = parseFloat(e.target.value);
+                          const lng = formData.coordinates?.longitude || 0;
+                          if (!isNaN(lat)) {
+                            setFormData(prev => ({
+                              ...prev,
+                              coordinates: { latitude: lat, longitude: lng }
+                            }));
+                          } else if (e.target.value === '') {
+                            // Clear coordinates if input is empty
+                            setFormData(prev => ({
+                              ...prev,
+                              coordinates: undefined
+                            }));
+                          }
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Longitude
+                      </label>
+                      <Input
+                        type="number"
+                        step="any"
+                        placeholder="e.g., 72.8777"
+                        value={formData.coordinates?.longitude || ''}
+                        onChange={(e) => {
+                          const lng = parseFloat(e.target.value);
+                          const lat = formData.coordinates?.latitude || 0;
+                          if (!isNaN(lng)) {
+                            setFormData(prev => ({
+                              ...prev,
+                              coordinates: { latitude: lat, longitude: lng }
+                            }));
+                          } else if (e.target.value === '') {
+                            // Clear coordinates if input is empty
+                            setFormData(prev => ({
+                              ...prev,
+                              coordinates: undefined
+                            }));
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -218,6 +218,7 @@ export interface ShopListingResponse {
       addressLine2?: string;
       location: string;
       nearbyLocation?: string;
+      coordinates?: Coordinates;
     };
     isListed: boolean;
     listedAt?: string;
@@ -360,6 +361,31 @@ export interface SubCategory {
 
 
 
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
+export interface GeocodingResponse {
+  results: Array<{
+    formatted: string;
+    geometry: {
+      lat: number;
+      lng: number;
+    };
+    components: {
+      city?: string;
+      state?: string;
+      country?: string;
+      postcode?: string;
+    };
+  }>;
+  status: {
+    code: number;
+    message: string;
+  };
+}
+
 export interface ShopListingFormData {
   shopName: string;
   shopDescription: string;
@@ -374,6 +400,7 @@ export interface ShopListingFormData {
   shopAddressLine2?: string;
   shopLocation: string;
   nearbyLocation?: string;
+  coordinates?: Coordinates;
   shopImages: File[];
 }
 
@@ -789,6 +816,104 @@ class ApiService {
       return data;
     } catch (error) {
       console.error('Shop listing failed:', error);
+      throw error;
+    }
+  }
+
+  // Update Shop Listing API
+  async updateShopListing(formData: FormData): Promise<ApiResponse<ShopListingResponse>> {
+    const url = `${this.baseURL}/vendor/shop/listing/update`;
+    
+    console.log('=== Update Shop Listing API Call ===');
+    console.log('Making shop listing update request to:', url);
+    console.log('FormData contents:');
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}:`, value.name, value.type, value.size);
+      } else {
+        console.log(`${key}:`, value);
+      }
+    }
+    
+    const token = this.getToken();
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Don't set Content-Type for FormData, browser will set it automatically
+        },
+        body: formData,
+      });
+
+      console.log('Shop listing update response status:', response.status);
+      console.log('Shop listing update response headers:', response.headers);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Shop Listing Update Error:', errorData);
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Shop Listing Update Response:', data);
+      return data;
+    } catch (error) {
+      console.error('Shop listing update failed:', error);
+      throw error;
+    }
+  }
+
+  // Get coordinates from address using OpenCage Geocoding API
+  async getCoordinatesFromAddress(address: string): Promise<Coordinates> {
+    try {
+      console.log('=== Geocoding API Call ===');
+      console.log('Address:', address);
+      
+      const encodedAddress = encodeURIComponent(address);
+      const response = await fetch(
+        `https://api.opencagedata.com/geocode/v1/json?q=${encodedAddress}&key=209d17df24024d31bdb7645501875d4c&language=en`
+      );
+      
+      const data: GeocodingResponse = await response.json();
+      console.log('Geocoding response:', data);
+      
+      if (data.status.code === 200 && data.results.length > 0) {
+        const result = data.results[0];
+        return {
+          latitude: result.geometry.lat,
+          longitude: result.geometry.lng
+        };
+      } else {
+        throw new Error('No coordinates found for this address');
+      }
+    } catch (error: any) {
+      console.error('Failed to get coordinates:', error);
+      throw error;
+    }
+  }
+
+  // Get address from coordinates using OpenCage Reverse Geocoding API
+  async getAddressFromCoordinates(latitude: number, longitude: number): Promise<string> {
+    try {
+      console.log('=== Reverse Geocoding API Call ===');
+      console.log('Coordinates:', { latitude, longitude });
+      
+      const response = await fetch(
+        `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=209d17df24024d31bdb7645501875d4c&language=en`
+      );
+      
+      const data: GeocodingResponse = await response.json();
+      console.log('Reverse geocoding response:', data);
+      
+      if (data.status.code === 200 && data.results.length > 0) {
+        return data.results[0].formatted;
+      } else {
+        throw new Error('No address found for these coordinates');
+      }
+    } catch (error: any) {
+      console.error('Failed to get address from coordinates:', error);
       throw error;
     }
   }
