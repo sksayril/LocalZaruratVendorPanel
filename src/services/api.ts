@@ -736,7 +736,7 @@ class ApiService {
       // Include Razorpay key ID in the request
       const requestBody = {
         plan: plan,
-        razorpayKeyId: 'rzp_live_RAHu2hkLoA44nP'
+        razorpayKeyId: 'rzp_test_J9KDxKMLaZnzJk'
       };
       
       console.log('Request body with Razorpay key:', requestBody);
